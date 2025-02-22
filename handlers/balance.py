@@ -1,3 +1,4 @@
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from database.operations import DatabaseOperations
 
 def handle_balance(bot, message):
@@ -15,4 +16,10 @@ def handle_balance(bot, message):
         date = last_transaction["timestamp"].strftime("%m/%d/%Y at %H:%M:%S")
         response += f"Last {transaction_type}: ${amount} on {date}"
     
-    bot.send_message(message.chat.id, response)
+    markup = InlineKeyboardMarkup()
+    markup.row(
+        InlineKeyboardButton("Deposit", callback_data="deposit"),
+        InlineKeyboardButton("Withdraw", callback_data="withdraw")
+    )
+
+    bot.send_message(message.chat.id, response, reply_markup=markup)

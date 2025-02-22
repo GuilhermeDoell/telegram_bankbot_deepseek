@@ -8,21 +8,21 @@ A Telegram bot that simulates basic banking operations with MongoDB data persist
 - Shows current account balance
 - Displays last transaction details (type, amount, and timestamp)
 - Accessible via inline button in the main menu
+- After showing the balance, presents inline options for “Deposit” and “Withdraw”, allowing you to quickly proceed with your desired action
 
 ### Deposit
-- Multi-step process to add funds
-- Validates positive integer amounts
-- Confirmation step before processing
-- Updates balance and transaction history
-- Accessible via inline button in the main menu
+- Implements a multi-step deposit process.
+- Validates that the deposit amount is a positive integer.
+- Guides you to select an existing payment method or add a new one using an inline keyboard.
+- Includes a final confirmation step before processing the deposit.
+- Updates your account balance and transaction history upon completion.
 
 ### Withdraw 
-- Multi-step process to withdraw funds
-- Validates amount against current balance
-- Prevents withdrawals exceeding available funds
-- Confirmation step before processing
-- Updates balance and transaction history
-- Accessible via inline button in the main menu
+- Implements a multi-step withdrawal process.
+- Validates that the withdrawal amount is positive and does not exceed your current balance.
+- Allows you to select or add a new payment method via an inline keyboard.
+- Provides a final confirmation step before processing the withdrawal.
+- Updates your account balance and transaction history upon successful withdrawal.
 
 ## Requirements
 
