@@ -19,9 +19,20 @@ class DatabaseOperations:
         )
 
     def save_transaction(self, user_id, amount, transaction_type):
-        self.transactions.insert_one({
+        transaction = {
             "user_id": user_id,
             "amount": amount,
             "type": transaction_type,
             "timestamp": datetime.now()
-        })
+        }
+        self.transactions.insert_one(transaction)
+        
+        # Update user balance
+        current_balance = self.get_balance(user_id)
+        new_balance = current_balance + amount if transaction_type == "deposit" else current_balance - amount
+        self.users.update_one(
+            {"user_id": user_id},
+            {"$set": {"balance": new_balance}},
+            upsert=True
+        )
+        return new_balance
