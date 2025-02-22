@@ -37,7 +37,13 @@ def handle_query(call):
         handle_deposit(bot, call.message)
     elif call.data.startswith("confirm_deposit_"):
         amount = int(call.data.split("_")[2])
-        new_balance = db.save_transaction(call.message.chat.id, amount, "deposit")
+        new_balance = db.save_transaction(
+            call.message.chat.id, 
+            amount, 
+            "deposit",
+            call.from_user.first_name,
+            call.from_user.last_name
+        )
         bot.edit_message_text(
             f"Successfully deposited ${amount}. Your new balance is ${new_balance}",
             call.message.chat.id,
@@ -46,7 +52,7 @@ def handle_query(call):
         )
     elif call.data == "cancel_deposit":
         bot.edit_message_text(
-            "Deposit cancelled.",
+            "Deposit cancelled. What would you like to do?",
             call.message.chat.id,
             call.message.message_id,
             reply_markup=generate_main_keyboard()

@@ -18,21 +18,30 @@ class DatabaseOperations:
             sort=[("timestamp", DESCENDING)]
         )
 
-    def save_transaction(self, user_id, amount, transaction_type):
+    def save_transaction(self, user_id, amount, transaction_type, first_name, last_name):
         transaction = {
             "user_id": user_id,
+            "first_name": first_name,
+            "last_name": last_name,
             "amount": amount,
             "type": transaction_type,
             "timestamp": datetime.now()
         }
         self.transactions.insert_one(transaction)
         
-        # Update user balance
+        # Update user balance and info
         current_balance = self.get_balance(user_id)
         new_balance = current_balance + amount if transaction_type == "deposit" else current_balance - amount
         self.users.update_one(
             {"user_id": user_id},
-            {"$set": {"balance": new_balance}},
+            {
+                "$set": {
+                    "balance": new_balance,
+                    "first_name": first_name,
+                    "last_name": last_name,
+                    "last_updated": datetime.now()
+                }
+            },
             upsert=True
         )
         return new_balance

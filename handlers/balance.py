@@ -12,7 +12,7 @@ def handle_balance(bot, message):
     if last_transaction:
         transaction_type = last_transaction["type"]
         amount = last_transaction["amount"]
-        date = last_transaction["timestamp"].strftime("%Y-%m-%d %H:%M:%S")
+        date = last_transaction["timestamp"].strftime("%m/%d/%Y at %H:%M:%S")
         response += f"Last {transaction_type}: ${amount} on {date}"
     
     bot.send_message(message.chat.id, response)
