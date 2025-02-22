@@ -43,14 +43,10 @@ def process_withdraw_amount(message, bot):
         payment_methods = db.get_user_payment_methods(message.chat.id)
         
         markup = InlineKeyboardMarkup()
-        # Build inline keyboard with the available withdrawal methods.
         for method in payment_methods:
             method_text = format_payment_method(method)
-            # Callback data: withdraw_method_{method_id}_{amount}
             markup.row(InlineKeyboardButton(method_text, callback_data=f"withdraw_method_{method['_id']}_{amount}"))
-        # Option to add a new method.
         markup.row(InlineKeyboardButton("Add New Method", callback_data=f"add_method_withdraw_{amount}"))
-        # Option to cancel.
         markup.row(InlineKeyboardButton("Cancel", callback_data="cancel_withdraw"))
         
         bot.send_message(

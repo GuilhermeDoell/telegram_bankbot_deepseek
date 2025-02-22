@@ -3,8 +3,8 @@ from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from environs import Env
 from database.operations import DatabaseOperations
 from handlers.balance import handle_balance
-from handlers.deposit import handle_deposit
-from handlers.withdraw import handle_withdraw
+from handlers.deposit import handle_deposit, format_payment_method
+from handlers.withdraw import handle_withdraw, format_payment_method
 
 env = Env()
 env.read_env('.env')
@@ -207,18 +207,75 @@ def handle_query(call):
         )
         bot.register_next_step_handler(msg, process_crypto_address, amount, crypto_type)
 
-def process_bank_name(message, amount):
-    method_id = db.save_payment_method(message.chat.id, "bank", {"bank_name": message.text})
-    show_transaction_confirmation(message, amount, method_id, message.text)
+    elif call.data.startswith("retry_add_method_"):
+        amount = call.data.split("_")[3]
+        markup = InlineKeyboardMarkup()
+        markup.row(
+            InlineKeyboardButton("Bank Transfer", callback_data=f"method_bank_{amount}"),
+            InlineKeyboardButton("PayPal", callback_data=f"method_paypal_{amount}")
+        )
+        markup.row(
+            InlineKeyboardButton("Crypto", callback_data=f"method_crypto_{amount}")
+        )
+        markup.row(InlineKeyboardButton("Cancel", callback_data="cancel_method"))
+        
+        bot.edit_message_text(
+            "Choose payment method type:",
+            call.message.chat.id,
+            call.message.message_id,
+            reply_markup=markup
+        )
+    
+    elif call.data.startswith("return_add_method_"):
+        amount = call.data.split("_")[3]
+        payment_methods = db.get_user_payment_methods(call.message.chat.id)
+        
+        markup = InlineKeyboardMarkup()
+        for method in payment_methods:
+            method_text = format_payment_method(method)
+            markup.row(InlineKeyboardButton(method_text, callback_data=f"deposit_method_{method['_id']}_{amount}"))
+        markup.row(InlineKeyboardButton("Add New Method", callback_data=f"add_method_deposit_{amount}"))
+        markup.row(InlineKeyboardButton("Cancel", callback_data="cancel_deposit"))
+        
+        bot.edit_message_text(
+            f"Select a deposit method for ${amount}:",
+            call.message.chat.id,
+            call.message.message_id,
+            reply_markup=markup
+        )    
 
+def process_bank_name(message, amount):
+    if db.payment_method_exists(message.chat.id, "bank", {"bank_name": message.text}):
+        send_duplicate_method_message(message, amount)
+    else:
+        method_id = db.save_payment_method(message.chat.id, "bank", {"bank_name": message.text})
+        show_transaction_confirmation(message, amount, method_id, message.text)
 
 def process_paypal_email(message, amount):
-    method_id = db.save_payment_method(message.chat.id, "paypal", {"email": message.text})
-    show_transaction_confirmation(message, amount, method_id, message.text)
+    if db.payment_method_exists(message.chat.id, "paypal", {"email": message.text}):
+        send_duplicate_method_message(message, amount)
+    else:
+        method_id = db.save_payment_method(message.chat.id, "paypal", {"email": message.text})
+        show_transaction_confirmation(message, amount, method_id, message.text)
 
 def process_crypto_address(message, amount, crypto_type):
-    method_id = db.save_payment_method(message.chat.id, "crypto", {"currency": crypto_type, "address": message.text})
-    show_transaction_confirmation(message, amount, method_id, f"Crypto: {crypto_type}")
+    if db.payment_method_exists(message.chat.id, "crypto", {"currency": crypto_type, "address": message.text}):
+        send_duplicate_method_message(message, amount)
+    else:
+        method_id = db.save_payment_method(message.chat.id, "crypto", {"currency": crypto_type, "address": message.text})
+        show_transaction_confirmation(message, amount, method_id, f"Crypto: {crypto_type}")
+
+def send_duplicate_method_message(message, amount):
+    markup = InlineKeyboardMarkup()
+    markup.row(
+        InlineKeyboardButton("Enter another payment method", callback_data=f"retry_add_method_{amount}"),
+        InlineKeyboardButton("Return", callback_data=f"return_add_method_{amount}")
+    )
+    bot.send_message(
+        message.chat.id,
+        "Payment method already exists. Please choose an option:",
+        reply_markup=markup
+    )
 
 def show_transaction_confirmation(message, amount, method_id, method_description):
     markup = InlineKeyboardMarkup()

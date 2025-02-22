@@ -20,6 +20,17 @@ class DatabaseOperations:
             sort=[("timestamp", DESCENDING)]
         )
 
+    def payment_method_exists(self, user_id, method_type, details):
+        query = {"user_id": user_id, "type": method_type}
+        if method_type == "bank":
+            query["details.bank_name"] = details["bank_name"]
+        elif method_type == "paypal":
+            query["details.email"] = details["email"]
+        elif method_type == "crypto":
+            query["details.currency"] = details["currency"]
+            query["details.address"] = details["address"]
+        return self.payment_methods.find_one(query) is not None
+
     def get_user_payment_methods(self, user_id):
         return list(self.payment_methods.find({"user_id": user_id}))
 
