@@ -1,32 +1,40 @@
 from telebot import TeleBot
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from environs import Env
-from mongo import save_user_interaction
+from database.operations import DatabaseOperations
+from handlers.balance import handle_balance
+#from handlers.deposit import handle_deposit
+#from handlers.withdraw import handle_withdraw
 
 env = Env()
 env.read_env('.env')
 BOT_TOKEN = env("BOT_TOKEN")
 bot = TeleBot(token=BOT_TOKEN)
 
-@bot.message_handler(content_types=['text'])
+def generate_main_keyboard():
+    keyboard = InlineKeyboardMarkup()
+    keyboard.row(
+        InlineKeyboardButton("Check Balance", callback_data="check_balance"),
+        InlineKeyboardButton("Deposit", callback_data="deposit"),
+        InlineKeyboardButton("Withdraw", callback_data="withdraw")
+    )
+    return keyboard
+
+@bot.message_handler(commands=['start'])
 def start_command(message):
-  chat_id = message.chat.id
-  user_message = message.text
-  message_id = message.message_id
-  first_name = message.from_user.first_name
-  last_name = message.from_user.last_name
-  user_data = {
-    "chat_id": chat_id, 
-    "first_name": first_name,
-    "last_name":last_name,
-    "message_id": message_id,
-    "message": user_message,
-    "timestamp": message.date
-  }
+    bot.send_message(
+        message.chat.id,
+        "Welcome to Banking Bot! Please select an option:",
+        reply_markup=generate_main_keyboard()
+    )
 
-  save_user_interaction(user_data)
+@bot.callback_query_handler(func=lambda call: True)
+def handle_query(call):
+    if call.data == "check_balance":
+        handle_balance(bot, call.message)
+    elif call.data == "deposit":
+        handle_deposit(bot, call.message)
+    elif call.data == "withdraw":
+        handle_withdraw(bot, call.message)
 
-  # Metodo que o bot responde com a mesma mensagem enviada pelo usuario
-  bot.send_message(chat_id=chat_id, text=user_message)
-
-print("polling")
 bot.polling()
