@@ -4,7 +4,7 @@ from environs import Env
 from database.operations import DatabaseOperations
 from handlers.balance import handle_balance
 from handlers.deposit import handle_deposit
-#from handlers.withdraw import handle_withdraw
+from handlers.withdraw import handle_withdraw
 
 env = Env()
 env.read_env('.env')
@@ -57,5 +57,29 @@ def handle_query(call):
             call.message.message_id,
             reply_markup=generate_main_keyboard()
         )
+    elif call.data == "withdraw":
+        handle_withdraw(bot, call.message)
+    elif call.data.startswith("confirm_withdraw_"):
+        amount = int(call.data.split("_")[2])
+        new_balance = db.save_transaction(
+            call.message.chat.id, 
+            -amount,  # Negative amount for withdrawal
+            "withdraw",
+            call.from_user.first_name,
+            call.from_user.last_name
+        )
+        bot.edit_message_text(
+            f"Successfully withdrew ${amount}. Your new balance is ${new_balance}",
+            call.message.chat.id,
+            call.message.message_id,
+            reply_markup=generate_main_keyboard()
+        )
+    elif call.data == "cancel_withdraw":
+        bot.edit_message_text(
+            "Withdrawal cancelled. What would you like to do?",
+            call.message.chat.id,
+            call.message.message_id,
+            reply_markup=generate_main_keyboard()
+        )    
 
 bot.polling()
